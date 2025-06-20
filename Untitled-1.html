@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>可爱空调遥控器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义颜色 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FF6B8B',
+                        secondary: '#9D65C9',
+                        tertiary: '#FFD166',
+                        background: '#F9F7F7',
+                        panel: '#FFFFFF',
+                        button: '#F0F0F0',
+                        buttonActive: '#E0E0E0',
+                        cool: '#4ECDC4',
+                        heat: '#FF6B6B',
+                        fan: '#6BCB77',
+                        dry: '#FFD93D',
+                        eco: '#7DCE13'
+                    },
+                    fontFamily: {
+                        cute: ['"Comic Sans MS"', '"Bubblegum Sans"', 'cursive'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .button-press {
+                transform: scale(0.95);
+                transition: transform 0.1s;
+            }
+            .button-release {
+                transform: scale(1);
+                transition: transform 0.1s;
+            }
+            .ac-shadow {
+                box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15), 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+            }
+            .ac-border {
+                border-radius: 2.5rem;
+                position: relative;
+                overflow: hidden;
+            }
+            .ac-border::before {
+                content: "";
+                position: absolute;
+                inset: -3px;
+                z-index: -1;
+                border-radius: 2.6rem;
+                background: linear-gradient(135deg, #FF6B8B, #9D65C9, #FFD166);
+                animation: rotate 6s linear infinite;
+            }
+            @keyframes rotate {
+                0% {
+                    filter: hue-rotate(0deg);
+                }
+                100% {
+                    filter: hue-rotate(360deg);
+                }
+            }
+            .gradient-bg {
+                background: linear-gradient(135deg, #F9F7F7 0%, #E6E6E6 100%);
+            }
+            .mode-icon {
+                transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            }
+            .mode-icon:hover {
+                transform: rotate(360deg) scale(1.1);
+            }
+            .slider-thumb {
+                appearance: none;
+                width: 25px;
+                height: 25px;
+                background: #FF6B8B;
+                border-radius: 50%;
+                cursor: pointer;
+            }
+            .eco-active {
+                animation: pulse-green 2s infinite;
+            }
+            @keyframes pulse-green {
+                0% {
+                    box-shadow: 0 0 0 0 rgba(125, 206, 19, 0.4);
+                }
+                70% {
+                    box-shadow: 0 0 0 10px rgba(125, 206, 19, 0);
+                }
+                100% {
+                    box-shadow: 0 0 0 0 rgba(125, 206, 19, 0);
+                }
+            }
+            .temp-indicator {
+                transition: all 0.3s ease;
+            }
+            .power-on {
+                animation: power-on 0.5s ease-out;
+            }
+            @keyframes power-on {
+                0% {
+                    transform: scale(0.95);
+                    opacity: 0.8;
+                }
+                50% {
+                    transform: scale(1.02);
+                }
+                100% {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+            }
+            .float {
+                animation: float 3s ease-in-out infinite;
+            }
+            @keyframes float {
+                0% {
+                    transform: translateY(0px);
+                }
+                50% {
+                    transform: translateY(-10px);
+                }
+                100% {
+                    transform: translateY(0px);
+                }
+            }
+            .temp-gauge {
+                height: 8px;
+                background: linear-gradient(to right, #4ECDC4, #FFD166, #FF6B6B);
+                border-radius: 4px;
+                overflow: hidden;
+            }
+            .temp-gauge-fill {
+                height: 100%;
+                transition: width 0.3s ease;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4 overflow-hidden">
+    <!-- 动态背景 -->
+    <div class="fixed inset-0 -z-10">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full filter blur-3xl float"></div>
+        <div class="absolute bottom-1/3 right-1/4 w-80 h-80 bg-secondary/10 rounded-full filter blur-3xl float" style="animation-delay: -1s;"></div>
+        <div class="absolute top-1/2 right-1/3 w-72 h-72 bg-tertiary/10 rounded-full filter blur-3xl float" style="animation-delay: -2s;"></div>
+        
+        <!-- 粒子效果 -->
+        <div id="particles" class="absolute inset-0"></div>
+    </div>
+    
+    <div class="max-w-md w-full">
+        <!-- 遥控器主体 -->
+        <div class="ac-border gradient-bg p-6 rounded-3xl ac-shadow">
+            <!-- 顶部品牌和显示屏 -->
+            <div class="mb-6">
+                <h1 class="text-center text-[clamp(1.5rem,3vw,2rem)] font-bold text-primary mb-2 font-cute tracking-wider">
+                    <span class="inline-block transform rotate-[-5deg]">可</span>
+                    <span class="inline-block transform rotate-[5deg]">爱</span>
+                    <span class="inline-block transform rotate-[-3deg]">空</span>
+                    <span class="inline-block transform rotate-[3deg]">调</span>
+                </h1>
+                
+                <!-- 显示屏 -->
+                <div class="bg-black/80 text-white p-5 rounded-2xl mb-4 relative overflow-hidden">
+                    <!-- 装饰元素 -->
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-secondary to-tertiary"></div>
+                    <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-tertiary via-secondary to-primary"></div>
+                    
+                    <div class="flex justify-between items-center mb-2">
+                        <div id="power-status" class="text-sm text-gray-400 flex items-center">
+                            <span id="power-indicator" class="inline-block w-2 h-2 rounded-full bg-gray-600 mr-2"></span>
+                            已关闭
+                        </div>
+                        <div id="timer-display" class="text-sm flex items-center">
+                            <i class="fa fa-clock-o mr-1"></i>
+                            定时: 0小时
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center space-x-2">
+                            <div id="mode-icon" class="text-3xl text-tertiary mode-icon">
+                                <i class="fa fa-snowflake-o"></i>
+                            </div>
+                            <div id="mode-text" class="text-sm">制冷</div>
+                        </div>
+                        
+                        <div id="temperature-display" class="text-[clamp(2.5rem,5vw,3.5rem)] font-bold temp-indicator">26°C</div>
+                        
+                        <div class="flex flex-col items-center">
+                            <div id="fan-speed-text" class="text-xs mb-1">风速</div>
+                            <div id="fan-speed-icon" class="text-lg">
+                                <i class="fa fa-tint"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 温度指示器 -->
+                    <div class="temp-gauge mb-2">
+                        <div id="temp-gauge-fill" class="temp-gauge-fill bg-white/50" style="width: 50%;"></div>
+                    </div>
+                    
+                    <!-- 新增节能模式指示器 -->
+                    <div id="eco-indicator" class="hidden mt-2 text-xs text-eco text-center flex items-center justify-center">
+                        <i class="fa fa-leaf mr-1"></i>
+                        <span>节能模式已开启</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 控制按钮 -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <!-- 电源按钮 -->
+                <button id="power-button" class="bg-white hover:bg-gray-50 text-primary font-bold py-4 px-4 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-primary/50 flex items-center justify-center">
+                    <i class="fa fa-power-off mr-2"></i>
+                    <span>开机</span>
+                </button>
+                
+                <!-- 模式按钮 -->
+                <button id="mode-button" class="bg-white hover:bg-gray-50 text-secondary font-bold py-4 px-4 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-secondary/50 flex items-center justify-center">
+                    <i class="fa fa-refresh mr-2"></i>
+                    <span>模式</span>
+                </button>
+            </div>
+            
+            <!-- 温度控制 -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-gray-600 font-medium">温度调节</span>
+                    <div class="flex space-x-1">
+                        <span class="text-xs text-cool">16</span>
+                        <div class="h-1 w-1 bg-gray-400 rounded-full"></div>
+                        <div class="h-1 w-1 bg-gray-400 rounded-full"></div>
+                        <div class="h-1 w-1 bg-gray-400 rounded-full"></div>
+                        <span class="text-xs text-heat">30</span>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between">
+                    <button id="temp-down" class="bg-white hover:bg-gray-50 text-primary font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <i class="fa fa-minus text-xl"></i>
+                    </button>
+                    
+                    <button id="temp-up" class="bg-white hover:bg-gray-50 text-primary font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <i class="fa fa-plus text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 风速控制 -->
+            <div class="mb-6">
+                <span class="text-gray-600 block mb-3 font-medium">风速调节</span>
+                
+                <div class="flex justify-between">
+                    <button id="fan-auto" class="fan-button bg-white hover:bg-gray-50 text-secondary font-bold py-3 px-3 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-secondary/50">
+                        <i class="fa fa-random mr-1"></i>
+                        <span class="text-xs">自动</span>
+                    </button>
+                    
+                    <button id="fan-low" class="fan-button bg-white hover:bg-gray-50 text-secondary font-bold py-3 px-3 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-secondary/50">
+                        <i class="fa fa-tint mr-1"></i>
+                        <span class="text-xs">低</span>
+                    </button>
+                    
+                    <button id="fan-medium" class="fan-button bg-white hover:bg-gray-50 text-secondary font-bold py-3 px-3 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-secondary/50">
+                        <i class="fa fa-tint mr-1"></i>
+                        <i class="fa fa-tint mr-1"></i>
+                        <span class="text-xs">中</span>
+                    </button>
+                    
+                    <button id="fan-high" class="fan-button bg-white hover:bg-gray-50 text-secondary font-bold py-3 px-3 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-secondary/50">
+                        <i class="fa fa-tint mr-1"></i>
+                        <i class="fa fa-tint mr-1"></i>
+                        <i class="fa fa-tint mr-1"></i>
+                        <span class="text-xs">高</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 定时控制 -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-gray-600 font-medium">定时</span>
+                    <span id="timer-value" class="text-primary font-bold">0小时</span>
+                </div>
+                
+                <div class="flex justify-between mb-4">
+                    <button id="timer-down" class="bg-white hover:bg-gray-50 text-primary font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <i class="fa fa-minus text-xl"></i>
+                    </button>
+                    
+                    <button id="timer-up" class="bg-white hover:bg-gray-50 text-primary font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <i class="fa fa-plus text-xl"></i>
+                    </button>
+                </div>
+                
+                <input type="range" id="timer-slider" min="0" max="12" value="0" step="0.5" 
+                       class="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+            
+            <!-- 其他功能按钮 -->
+            <div class="grid grid-cols-3 gap-4">
+                <button id="swing-button" class="bg-white hover:bg-gray-50 text-tertiary font-bold py-4 px-3 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-tertiary/50 flex flex-col items-center justify-center">
+                    <i class="fa fa-arrows-h mr-1 text-lg"></i>
+                    <span class="text-xs mt-1">扫风</span>
+                </button>
+                
+                <button id="sleep-button" class="bg-white hover:bg-gray-50 text-tertiary font-bold py-4 px-3 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-tertiary/50 flex flex-col items-center justify-center">
+                    <i class="fa fa-moon-o mr-1 text-lg"></i>
+                    <span class="text-xs mt-1">睡眠</span>
+                </button>
+                
+                <!-- 新增节能模式按钮 -->
+                <button id="eco-button" class="bg-white hover:bg-gray-50 text-eco font-bold py-4 px-3 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-eco/50 flex flex-col items-center justify-center">
+                    <i class="fa fa-leaf mr-1 text-lg"></i>
+                    <span class="text-xs mt-1">节能</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 底部说明 -->
+        <p class="text-center text-gray-500 text-sm mt-4">这是一个模拟的空调遥控器界面，点击按钮可以体验控制效果</p>
+    </div>
+
+    <script>
+        // 空调状态变量
+        const acState = {
+            isOn: false,
+            temperature: 26,
+            mode: 0, // 0: 制冷, 1: 制热, 2: 送风, 3: 除湿
+            fanSpeed: 1, // 0: 自动, 1: 低, 2: 中, 3: 高
+            timer: 0,    // 定时小时数
+            swing: false,
+            sleep: false,
+            eco: false   // 新增节能模式状态
+        };
+        
+        // 模式图标、文本和颜色
+        const modeIcons = ['fa-snowflake-o', 'fa-sun-o', 'fa-wind', 'fa-tint'];
+        const modeTexts = ['制冷', '制热', '送风', '除湿'];
+        const modeColors = ['cool', 'heat', 'fan', 'dry'];
+        
+        // 获取DOM元素
+        const powerButton = document.getElementById('power-button');
+        const modeButton = document.getElementById('mode-button');
+        const tempUpButton = document.getElementById('temp-up');
+        const tempDownButton = document.getElementById('temp-down');
+        const fanButtons = document.querySelectorAll('.fan-button');
+        const timerUpButton = document.getElementById('timer-up');
+        const timerDownButton = document.getElementById('timer-down');
+        const timerSlider = document.getElementById('timer-slider');
+        const swingButton = document.getElementById('swing-button');
+        const sleepButton = document.getElementById('sleep-button');
+        const ecoButton = document.getElementById('eco-button'); // 新增节能按钮
+        
+        const powerStatus = document.getElementById('power-status');
+        const powerIndicator = document.getElementById('power-indicator');
+        const temperatureDisplay = document.getElementById('temperature-display');
+        const modeIcon = document.getElementById('mode-icon');
+        const modeText = document.getElementById('mode-text');
+        const fanSpeedIcon = document.getElementById('fan-speed-icon');
+        const fanSpeedText = document.getElementById('fan-speed-text');
+        const timerDisplay = document.getElementById('timer-display');
+        const timerValue = document.getElementById('timer-value');
+        const ecoIndicator = document.getElementById('eco-indicator'); // 新增节能指示器
+        const tempGaugeFill = document.getElementById('temp-gauge-fill'); // 温度指示器
+        
+        // 创建粒子背景
+        createParticles();
+        
+        // 添加按钮点击效果
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('mousedown', () => {
+                button.classList.add('button-press');
+            });
+            
+            button.addEventListener('mouseup', () => {
+                button.classList.remove('button-press');
+            });
+            
+            button.addEventListener('mouseleave', () => {
+                button.classList.remove('button-press');
+            });
+        });
+        
+        // 电源控制
+        powerButton.addEventListener('click', () => {
+            acState.isOn = !acState.isOn;
+            updatePowerStatus();
+            playButtonAnimation(powerButton);
+            
+            // 电源状态变化时添加动画
+            const remote = document.querySelector('.ac-border');
+            if (acState.isOn) {
+                remote.classList.add('power-on');
+                setTimeout(() => {
+                    remote.classList.remove('power-on');
+                }, 500);
+            }
+        });
+        
+        // 模式控制
+        modeButton.addEventListener('click', () => {
+            if (acState.isOn) {
+                acState.mode = (acState.mode + 1) % 4;
+                updateModeDisplay();
+                playButtonAnimation(modeButton);
+            }
+        });
+        
+        // 温度控制
+        tempUpButton.addEventListener('click', () => {
+            if (acState.isOn && acState.temperature < 30) {
+                acState.temperature++;
+                updateTemperatureDisplay();
+                playButtonAnimation(tempUpButton);
+            }
+        });
+        
+        tempDownButton.addEventListener('click', () => {
+            if (acState.isOn && acState.temperature > 16) {
+                acState.temperature--;
+                updateTemperatureDisplay();
+                playButtonAnimation(tempDownButton);
+            }
+        });
+        
+        // 风速控制
+        document.getElementById('fan-auto').addEventListener('click', () => setFanSpeed(0));
+        document.getElementById('fan-low').addEventListener('click', () => setFanSpeed(1));
+        document.getElementById('fan-medium').addEventListener('click', () => setFanSpeed(2));
+        document.getElementById('fan-high').addEventListener('click', () => setFanSpeed(3));
+        
+        function setFanSpeed(speed) {
+            if (acState.isOn) {
+                acState.fanSpeed = speed;
+                updateFanSpeedDisplay();
+                fanButtons.forEach((button, index) => {
+                    if (index === speed) {
+                        button.classList.add('bg-secondary/10');
+                    } else {
+                        button.classList.remove('bg-secondary/10');
+                    }
+                    playButtonAnimation(button);
+                });
+                
+                // 风速变化动画
+                fanSpeedIcon.classList.add('scale-125');
+                setTimeout(() => {
+                    fanSpeedIcon.classList.remove('scale-125');
+                }, 200);
+            }
+        }
+        
+        // 定时控制
+        timerUpButton.addEventListener('click', () => {
+            if (acState.isOn && acState.timer < 12) {
+                acState.timer += 0.5;
+                updateTimerDisplay();
+                playButtonAnimation(timerUpButton);
+            }
+        });
+        
+        timerDownButton.addEventListener('click', () => {
+            if (acState.isOn && acState.timer > 0) {
+                acState.timer -= 0.5;
+                updateTimerDisplay();
+                playButtonAnimation(timerDownButton);
+            }
+        });
+        
+        timerSlider.addEventListener('input', () => {
+            if (acState.isOn) {
+                acState.timer = parseFloat(timerSlider.value);
+                updateTimerDisplay();
+            }
+        });
+        
+        // 新增节能模式控制
+        ecoButton.addEventListener('click', () => {
+            if (acState.isOn) {
+                acState.eco = !acState.eco;
+                updateEcoMode();
+                playButtonAnimation(ecoButton);
+            }
+        });
+        
+        // 其他功能
+        swingButton.addEventListener('click', () => {
+            if (acState.isOn) {
+                acState.swing = !acState.swing;
+                updateSwingButton();
+                playButtonAnimation(swingButton);
+            }
+        });
+        
+        sleepButton.addEventListener('click', () => {
+            if (acState.isOn) {
+                acState.sleep = !acState.sleep;
+                updateSleepButton();
+                playButtonAnimation(sleepButton);
+            }
+        });
+        
+        // 更新显示函数
+        function updatePowerStatus() {
+            if (acState.isOn) {
+                powerButton.innerHTML = '<i class="fa fa-power-off mr-2"></i><span>关机</span>';
+                powerButton.classList.remove('text-primary');
+                powerButton.classList.add('text-red-500');
+                powerStatus.innerHTML = '<span id="power-indicator" class="inline-block w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>已开启';
+                powerStatus.classList.remove('text-gray-400');
+                powerStatus.classList.add('text-green-400');
+                
+                // 显示空调开启后的状态
+                temperatureDisplay.classList.remove('text-gray-500');
+                temperatureDisplay.classList.add('text-white');
+                modeIcon.classList.remove('text-gray-500');
+                modeIcon.classList.add(`text-${modeColors[acState.mode]}`);
+                modeText.classList.remove('text-gray-500');
+                modeText.classList.add('text-white');
+                fanSpeedIcon.classList.remove('text-gray-500');
+                fanSpeedIcon.classList.add('text-white');
+                fanSpeedText.classList.remove('text-gray-500');
+                fanSpeedText.classList.add('text-white');
+                
+                // 更新温度指示器
+                updateTemperatureDisplay();
+            } else {
+                powerButton.innerHTML = '<i class="fa fa-power-off mr-2"></i><span>开机</span>';
+                powerButton.classList.remove('text-red-500');
+                powerButton.classList.add('text-primary');
+                powerStatus.innerHTML = '<span id="power-indicator" class="inline-block w-2 h-2 rounded-full bg-gray-600 mr-2"></span>已关闭';
+                powerStatus.classList.remove('text-green-400');
+                powerStatus.classList.add('text-gray-400');
+                
+                // 显示空调关闭后的状态
+                temperatureDisplay.classList.remove('text-white');
+                temperatureDisplay.classList.add('text-gray-500');
+                modeIcon.classList.remove(`text-${modeColors[acState.mode]}`);
+                modeIcon.classList.add('text-gray-500');
+                modeText.classList.remove('text-white');
+                modeText.classList.add('text-gray-500');
+                fanSpeedIcon.classList.remove('text-white');
+                fanSpeedIcon.classList.add('text-gray-500');
+                fanSpeedText.classList.remove('text-white');
+                fanSpeedText.classList.add('text-gray-500');
+                
+                // 关闭空调时同时关闭节能模式
+                acState.eco = false;
+                updateEcoMode();
+            }
+        }
+        
+        function updateTemperatureDisplay() {
+            temperatureDisplay.textContent = `${acState.temperature}°C`;
+            
+            // 更新温度指示器
+            const percentage = ((acState.temperature - 16) / (30 - 16)) * 100;
+            tempGaugeFill.style.width = `${percentage}%`;
+            
+            // 根据温度调整颜色
+            let tempColor;
+            if (acState.temperature < 20) {
+                tempColor = 'cool';
+            } else if (acState.temperature > 26) {
+                tempColor = 'heat';
+            } else {
+                tempColor = 'tertiary';
+            }
+            
+            temperatureDisplay.classList.remove('text-cool', 'text-tertiary', 'text-heat');
+            temperatureDisplay.classList.add(`text-${tempColor}`);
+            
+            // 温度变化动画
+            temperatureDisplay.classList.add('scale-110');
+            setTimeout(() => {
+                temperatureDisplay.classList.remove('scale-110');
+            }, 200);
+        }
+        
+        function updateModeDisplay() {
+            modeIcon.innerHTML = `<i class="fa ${modeIcons[acState.mode]}"></i>`;
+            modeText.textContent = modeTexts[acState.mode];
+            
+            // 更新模式图标颜色
+            modeIcon.classList.remove(...modeColors.map(color => `text-${color}`));
+            modeIcon.classList.add(`text-${modeColors[acState.mode]}`);
+            
+            // 模式切换动画
+            modeIcon.classList.add('scale-125');
+            setTimeout(() => {
+                modeIcon.classList.remove('scale-125');
+            }, 300);
+        }
+        
+        function updateFanSpeedDisplay() {
+            let iconHtml = '';
+            let text = '';
+            
+            switch (acState.fanSpeed) {
+                case 0:
+                    iconHtml = '<i class="fa fa-random"></i>';
+                    text = '自动';
+                    break;
+                case 1:
+                    iconHtml = '<i class="fa fa-tint"></i>';
+                    text = '低';
+                    break;
+                case 2:
+                    iconHtml = '<i class="fa fa-tint"></i><i class="fa fa-tint"></i>';
+                    text = '中';
+                    break;
+                case 3:
+                    iconHtml = '<i class="fa fa-tint"></i><i class="fa fa-tint"></i><i class="fa fa-tint"></i>';
+                    text = '高';
+                    break;
+            }
+            
+            fanSpeedIcon.innerHTML = iconHtml;
+            fanSpeedText.textContent = text;
+        }
+        
+        function updateTimerDisplay() {
+            timerValue.textContent = acState.timer === 0 ? '0小时' : 
+                                   acState.timer % 1 === 0 ? `${acState.timer}小时` : 
+                                   `${acState.timer}小时`;
+            timerDisplay.textContent = `定时: ${timerValue.textContent}`;
+            timerSlider.value = acState.timer;
+            
+            // 定时变化动画
+            timerValue.classList.add('scale-110');
+            setTimeout(() => {
+                timerValue.classList.remove('scale-110');
+            }, 200);
+        }
+        
+        function updateSwingButton() {
+            if (acState.swing) {
+                swingButton.classList.remove('text-tertiary');
+                swingButton.classList.add('bg-tertiary/20', 'text-tertiary/80', 'scale-95');
+            } else {
+                swingButton.classList.add('text-tertiary');
+                swingButton.classList.remove('bg-tertiary/20', 'text-tertiary/80', 'scale-95');
+            }
+        }
+        
+        function updateSleepButton() {
+            if (acState.sleep) {
+                sleepButton.classList.remove('text-tertiary');
+                sleepButton.classList.add('bg-tertiary/20', 'text-tertiary/80', 'scale-95');
+            } else {
+                sleepButton.classList.add('text-tertiary');
+                sleepButton.classList.remove('bg-tertiary/20', 'text-tertiary/80', 'scale-95');
+            }
+        }
+        
+        // 新增节能模式更新函数
+        function updateEcoMode() {
+            if (acState.eco) {
+                ecoButton.classList.remove('text-eco');
+                ecoButton.classList.add('bg-eco/20', 'text-eco/80', 'eco-active');
+                ecoIndicator.classList.remove('hidden');
+            } else {
+                ecoButton.classList.add('text-eco');
+                ecoButton.classList.remove('bg-eco/20', 'text-eco/80', 'eco-active');
+                ecoIndicator.classList.add('hidden');
+            }
+        }
+        
+        // 按钮动画效果
+        function playButtonAnimation(button) {
+            button.classList.add('scale-95');
+            setTimeout(() => {
+                button.classList.remove('scale-95');
+            }, 150);
+        }
+        
+        // 创建粒子背景
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                
+                // 随机大小和位置
+                const size = Math.random() * 10 + 5;
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                const duration = Math.random() * 20 + 10;
+                const delay = Math.random() * 5;
+                
+                // 随机颜色
+                const colors = ['bg-primary/20', 'bg-secondary/20', 'bg-tertiary/20'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                particle.className = `absolute rounded-full ${color}`;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${x}%`;
+                particle.style.top = `${y}%`;
+                particle.style.animation = `float ${duration}s ease-in-out ${delay}s infinite`;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+        
+        // 初始化显示
+        updatePowerStatus();
+        updateTemperatureDisplay();
+        updateModeDisplay();
+        updateFanSpeedDisplay();
+        updateTimerDisplay();
+        updateSwingButton();
+        updateSleepButton();
+        updateEcoMode(); // 新增初始化节能模式显示
+        setFanSpeed(acState.fanSpeed);
+    </script>
+</body>
+</html>
+    
